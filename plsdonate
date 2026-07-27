@@ -1,0 +1,717 @@
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
+local Camera = workspace.CurrentCamera
+
+local State = {
+    speed = 16, jumpPower = 50, gravity = 196,
+    noclip = false, fly = false, infJump = false,
+    spinBot = false, invisible = false, godMode = false,
+    rainbow = false, antiAfk = false, bhop = false,
+    farmRunning = false, collectionRadius = 50,
+    autoTool = false,
+    espEnabled = false, espChams = false, espTracers = false,
+    espBoxes = false, espNametags = false, espHealthBars = false,
+    espDistance = false,
+    espFillColor = Color3.fromRGB(255,100,100),
+    espOutlineColor = Color3.fromRGB(255,255,255),
+    espChamsColor = Color3.fromRGB(0,200,255),
+    espTracerColor = Color3.fromRGB(255,255,0),
+    espBoxColor = Color3.fromRGB(255,0,0),
+    espFillTransp = 0.5,
+    espOutlineTransp = 0,
+    fullbright = false, noFog = false, xray = false,
+    noTextures = false, antiLag = false,
+    dayLock = false, nightLock = false,
+    timeOfDay = 14, gravityVal = 196,
+    clickTp = false, fov = 70,
+    aimbotEnabled = false, aimbotTeamCheck = false,
+    aimbotFOV = 100, aimbotSmoothness = 0.2,
+    aimbotTargetPart = "Head", aimbotVisibleCheck = false,
+    aimbotKeyBind = Enum.KeyCode.E, aimbotHolding = false,
+    silentAimEnabled = false, silentAimHitChance = 100,
+    flyV2Enabled = false, flyV2Speed = 50,
+    crosshairEnabled = false, crosshairColor = Color3.fromRGB(0,255,0),
+    nightVisionEnabled = false, antiFlingEnabled = false,
+    lagSwitchEnabled = false, autoRejoinEnabled = false,
+    infiniteStaminaEnabled = false, noSlowdownEnabled = false,
+    aimLockEnabled = false, aimLockTarget = nil,
+    autoDodgeEnabled = false, hitboxExpander = 0,
+    noJumpDelay = false, autoReloadEnabled = false,
+    fastPunchEnabled = false, gunModEnabled = false,
+    reachExtender = 0, autoRespawnEnabled = false, autoPickupEnabled = false,
+    autoQuestEnabled = false, autoBuyEnabled = false, autoEquipEnabled = false,
+    antiVoidEnabled = false, autoHealEnabled = false, autoHealThreshold = 30,
+    platformStand = false, lockZoomEnabled = false,
+    removeEffects = false, disableShadows = false,
+    autoClickerEnabled = false, autoClickerSpeed = 0.1, autoClickerHolding = false,
+    spamChatEnabled = false, spamChatMessage = "aviadons on top", spamChatDelay = 1,
+    trailEnabled = false, trailColor = Color3.fromRGB(255,0,255), trailLength = 2,
+    autoBlockEnabled = false, freezePlayersEnabled = false,
+    autoFarmMobsEnabled = false, autoFarmRadius = 100,
+    acDisablerEnabled = false,
+    
+    -- PLS DONATE Specific States
+    plsdonateWebhookUrl = "",
+    plsdonateWebhookEnabled = false,
+    plsdonateAutoHopDonator = false,
+    plsdonateRichPresence = false,
+}
+
+local Themes = {
+    dark =     {name="dark",     main=Color3.fromRGB(20,20,25),    secondary=Color3.fromRGB(30,30,38),   accent=Color3.fromRGB(88,101,242),  text=Color3.fromRGB(255,255,255), glass=0.55, glassSecondary=0.65},
+    light =    {name="light",    main=Color3.fromRGB(230,235,245), secondary=Color3.fromRGB(255,255,255),accent=Color3.fromRGB(0,122,255),   text=Color3.fromRGB(15,15,20),    glass=0.35, glassSecondary=0.25},
+    purple =   {name="purple",   main=Color3.fromRGB(25,15,40),    secondary=Color3.fromRGB(45,25,65),   accent=Color3.fromRGB(147,51,234),  text=Color3.fromRGB(255,255,255), glass=0.55, glassSecondary=0.65},
+    midnight = {name="midnight", main=Color3.fromRGB(10,18,35),    secondary=Color3.fromRGB(20,32,55),   accent=Color3.fromRGB(34,211,238),  text=Color3.fromRGB(255,255,255), glass=0.55, glassSecondary=0.65},
+    rose =     {name="rose",     main=Color3.fromRGB(35,15,20),    secondary=Color3.fromRGB(55,25,35),   accent=Color3.fromRGB(255,80,120),  text=Color3.fromRGB(255,255,255), glass=0.55, glassSecondary=0.65},
+    forest =   {name="forest",   main=Color3.fromRGB(15,30,20),    secondary=Color3.fromRGB(25,45,30),   accent=Color3.fromRGB(50,200,80),   text=Color3.fromRGB(255,255,255), glass=0.55, glassSecondary=0.65},
+    sunset =   {name="sunset",   main=Color3.fromRGB(35,20,10),    secondary=Color3.fromRGB(55,32,15),   accent=Color3.fromRGB(255,140,0),   text=Color3.fromRGB(255,255,255), glass=0.55, glassSecondary=0.65},
+    ice =      {name="ice",      main=Color3.fromRGB(15,25,40),    secondary=Color3.fromRGB(25,40,60),   accent=Color3.fromRGB(135,206,250), text=Color3.fromRGB(255,255,255), glass=0.45, glassSecondary=0.55},
+}
+
+local customThemes = {}
+local T = Themes.dark
+local allFrames, allLabels, allTabBtns, allAccentBtns = {}, {}, {}, {}
+local ESP_drawings = {}
+local Configs = {}
+local savedConfigNames = {}
+local sliderRefs = {}
+
+-- UI Setup
+local Aviadons = Instance.new("ScreenGui")
+Aviadons.Name = "Aviadons"
+Aviadons.Parent = game:GetService("CoreGui")
+Aviadons.ResetOnSpawn = false
+Aviadons.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local Main = Instance.new("Frame")
+Main.Name = "main"
+Main.Parent = Aviadons
+Main.BackgroundColor3 = T.main
+Main.BackgroundTransparency = T.glass
+Main.Position = UDim2.new(0.28,0,0.15,0)
+Main.Size = UDim2.new(0,720,0,520)
+Main.BorderSizePixel = 0
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,16)
+local MainStroke = Instance.new("UIStroke",Main)
+MainStroke.Thickness = 1.2
+MainStroke.Color = Color3.fromRGB(255,255,255)
+MainStroke.Transparency = 0.72
+
+local Blur2 = Instance.new("Frame",Main)
+Blur2.BackgroundColor3 = T.main
+Blur2.BackgroundTransparency = 0.92
+Blur2.Size = UDim2.new(1,0,1,0)
+Blur2.BorderSizePixel = 0
+Blur2.ZIndex = 0
+Instance.new("UICorner",Blur2).CornerRadius = UDim.new(0,16)
+
+local TopBar = Instance.new("Frame",Main)
+TopBar.Size = UDim2.new(1,0,0,46)
+TopBar.BackgroundColor3 = T.secondary
+TopBar.BackgroundTransparency = T.glassSecondary
+TopBar.BorderSizePixel = 0
+TopBar.ZIndex = 2
+Instance.new("UICorner",TopBar).CornerRadius = UDim.new(0,16)
+local TopFix = Instance.new("Frame",TopBar)
+TopFix.Size = UDim2.new(1,0,0,16)
+TopFix.Position = UDim2.new(0,0,1,-16)
+TopFix.BackgroundColor3 = T.secondary
+TopFix.BackgroundTransparency = T.glassSecondary
+TopFix.BorderSizePixel = 0
+local TopStroke = Instance.new("UIStroke",TopBar)
+TopStroke.Thickness = 1
+TopStroke.Color = Color3.fromRGB(255,255,255)
+TopStroke.Transparency = 0.8
+
+local Title = Instance.new("TextLabel",TopBar)
+Title.Size = UDim2.new(0,200,1,0)
+Title.Position = UDim2.new(0,16,0,0)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "aviadons"
+Title.TextColor3 = T.text
+Title.TextSize = 17
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.BackgroundTransparency = 1
+Title.ZIndex = 3
+
+local HintLabel = Instance.new("TextLabel",TopBar)
+HintLabel.Size = UDim2.new(0,200,1,0)
+HintLabel.Position = UDim2.new(0.5,-100,0,0)
+HintLabel.Font = Enum.Font.Gotham
+HintLabel.Text = "RCtrl = toggle"
+HintLabel.TextColor3 = Color3.fromRGB(150,150,160)
+HintLabel.TextSize = 12
+HintLabel.BackgroundTransparency = 1
+HintLabel.ZIndex = 3
+
+local CloseBtn = Instance.new("TextButton",TopBar)
+CloseBtn.Size = UDim2.new(0,28,0,28)
+CloseBtn.Position = UDim2.new(1,-38,0.5,-14)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(220,53,69)
+CloseBtn.BackgroundTransparency = 0.25
+CloseBtn.Text = "×"
+CloseBtn.TextColor3 = Color3.fromRGB(255,255,255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 18
+CloseBtn.ZIndex = 3
+Instance.new("UICorner",CloseBtn).CornerRadius = UDim.new(1,0)
+CloseBtn.MouseButton1Click:Connect(function() Main.Visible = false end)
+
+local Sidebar = Instance.new("Frame",Main)
+Sidebar.Size = UDim2.new(0,155,1,-60)
+Sidebar.Position = UDim2.new(0,10,0,52)
+Sidebar.BackgroundColor3 = T.secondary
+Sidebar.BackgroundTransparency = T.glassSecondary
+Sidebar.BorderSizePixel = 0
+Sidebar.ZIndex = 2
+Instance.new("UICorner",Sidebar).CornerRadius = UDim.new(0,12)
+local SideStroke = Instance.new("UIStroke",Sidebar)
+SideStroke.Thickness = 1
+SideStroke.Color = Color3.fromRGB(255,255,255)
+SideStroke.Transparency = 0.8
+
+local SideScroll = Instance.new("ScrollingFrame",Sidebar)
+SideScroll.Size = UDim2.new(1,0,1,-10)
+SideScroll.Position = UDim2.new(0,0,0,8)
+SideScroll.BackgroundTransparency = 1
+SideScroll.ScrollBarThickness = 0
+SideScroll.CanvasSize = UDim2.new(0,0,3,0)
+SideScroll.ZIndex = 2
+local SideList = Instance.new("UIListLayout",SideScroll)
+SideList.Padding = UDim.new(0,5)
+SideList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local SidePad = Instance.new("UIPadding",SideScroll)
+SidePad.PaddingLeft = UDim.new(0,6)
+SidePad.PaddingRight = UDim.new(0,6)
+
+local Container = Instance.new("Frame",Main)
+Container.Position = UDim2.new(0,175,0,52)
+Container.Size = UDim2.new(1,-185,1,-62)
+Container.BackgroundTransparency = 1
+Container.ZIndex = 2
+
+local Pages = Instance.new("Folder",Container)
+
+local dragging, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging=true; dragStart=input.Position; startPos=Main.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset+delta.X, startPos.Y.Scale, startPos.Y.Offset+delta.Y)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging=false end
+end)
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightControl then Main.Visible = not Main.Visible end
+end)
+
+local function UpdateTheme(theme)
+    T = theme
+    Main.BackgroundColor3 = T.main
+    Main.BackgroundTransparency = T.glass
+    Blur2.BackgroundColor3 = T.main
+    Blur2.BackgroundTransparency = 0.92
+    TopBar.BackgroundColor3 = T.secondary
+    TopBar.BackgroundTransparency = T.glassSecondary
+    TopFix.BackgroundColor3 = T.secondary
+    TopFix.BackgroundTransparency = T.glassSecondary
+    Sidebar.BackgroundColor3 = T.secondary
+    Sidebar.BackgroundTransparency = T.glassSecondary
+    Title.TextColor3 = T.text
+    for _, f in pairs(allFrames) do
+        if f and f.Parent then f.BackgroundColor3=T.secondary; f.BackgroundTransparency=T.glassSecondary end
+    end
+    for _, l in pairs(allLabels) do if l and l.Parent then l.TextColor3=T.text end end
+    for _, btn in pairs(allTabBtns) do if btn and btn.Parent then btn.TextColor3=T.text end end
+    for _, btn in pairs(allAccentBtns) do if btn and btn.Parent then btn.BackgroundColor3=T.accent end end
+end
+
+local function CreateTab(name)
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name
+    Page.Parent = Pages
+    Page.Size = UDim2.new(1,0,1,0)
+    Page.BackgroundTransparency = 1
+    Page.Visible = false
+    Page.ScrollBarThickness = 3
+    Page.ScrollBarImageColor3 = Color3.fromRGB(255,255,255)
+    Page.CanvasSize = UDim2.new(0,0,10,0)
+    Page.BorderSizePixel = 0
+    Page.ZIndex = 2
+    local pl = Instance.new("UIListLayout",Page)
+    pl.Padding = UDim.new(0,7)
+    pl.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    local pad = Instance.new("UIPadding",Page)
+    pad.PaddingTop = UDim.new(0,4)
+
+    local TabBtn = Instance.new("TextButton",SideScroll)
+    TabBtn.Size = UDim2.new(1,0,0,36)
+    TabBtn.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    TabBtn.BackgroundTransparency = 0.9
+    TabBtn.Font = Enum.Font.Gotham
+    TabBtn.Text = name
+    TabBtn.TextColor3 = T.text
+    TabBtn.TextSize = 13
+    TabBtn.ZIndex = 3
+    Instance.new("UICorner",TabBtn).CornerRadius = UDim.new(0,8)
+    local ts = Instance.new("UIStroke",TabBtn)
+    ts.Thickness=1; ts.Color=Color3.fromRGB(255,255,255); ts.Transparency=0.85
+    table.insert(allTabBtns,TabBtn)
+
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, v in pairs(Pages:GetChildren()) do v.Visible=false end
+        Page.Visible = true
+        for _, btn in pairs(SideScroll:GetChildren()) do
+            if btn:IsA("TextButton") then
+                TweenService:Create(btn,TweenInfo.new(0.2),{BackgroundColor3=Color3.fromRGB(255,255,255),BackgroundTransparency=0.9}):Play()
+            end
+        end
+        TweenService:Create(TabBtn,TweenInfo.new(0.2),{BackgroundColor3=T.accent,BackgroundTransparency=0.25}):Play()
+    end)
+    return Page
+end
+
+local function AddToggle(parent, text, initState, callback)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0.97,0,0,40)
+    Frame.BackgroundColor3 = T.secondary
+    Frame.BackgroundTransparency = T.glassSecondary
+    Frame.Parent = parent; Frame.ZIndex = 2
+    Instance.new("UICorner",Frame).CornerRadius = UDim.new(0,9)
+    local fs = Instance.new("UIStroke",Frame)
+    fs.Thickness=1; fs.Color=Color3.fromRGB(255,255,255); fs.Transparency=0.82
+    table.insert(allFrames,Frame)
+
+    local Label = Instance.new("TextLabel",Frame)
+    Label.Size = UDim2.new(1,-68,1,0); Label.Position = UDim2.new(0,12,0,0)
+    Label.BackgroundTransparency=1; Label.Text=text; Label.TextColor3=T.text
+    Label.Font=Enum.Font.Gotham; Label.TextSize=13
+    Label.TextXAlignment=Enum.TextXAlignment.Left; Label.ZIndex=3
+    table.insert(allLabels,Label)
+
+    local DelBtn = Instance.new("TextButton",Frame)
+    DelBtn.Size=UDim2.new(0,20,0,20); DelBtn.Position=UDim2.new(0,-26,0.5,-10)
+    DelBtn.BackgroundColor3=Color3.fromRGB(220,53,69); DelBtn.BackgroundTransparency=0.3
+    DelBtn.Text="×"; DelBtn.TextColor3=Color3.fromRGB(255,255,255)
+    DelBtn.Font=Enum.Font.GothamBold; DelBtn.TextSize=13; DelBtn.ZIndex=3
+    Instance.new("UICorner",DelBtn).CornerRadius=UDim.new(1,0)
+    DelBtn.MouseButton1Click:Connect(function() Frame:Destroy() end)
+
+    local Switch = Instance.new("Frame",Frame)
+    Switch.Size=UDim2.new(0,46,0,26); Switch.Position=UDim2.new(1,-54,0.5,-13)
+    Switch.BackgroundColor3=Color3.fromRGB(130,130,140); Switch.ZIndex=3
+    Instance.new("UICorner",Switch).CornerRadius=UDim.new(1,0)
+    local ss = Instance.new("UIStroke",Switch)
+    ss.Thickness=1; ss.Color=Color3.fromRGB(255,255,255); ss.Transparency=0.7
+
+    local Knob = Instance.new("Frame",Switch)
+    Knob.Size=UDim2.new(0,20,0,20); Knob.Position=UDim2.new(0,3,0.5,-10)
+    Knob.BackgroundColor3=Color3.fromRGB(255,255,255); Knob.ZIndex=4
+    Instance.new("UICorner",Knob).CornerRadius=UDim.new(1,0)
+
+    local CurState = initState or false
+    local Btn = Instance.new("TextButton",Switch)
+    Btn.Size=UDim2.new(1,0,1,0); Btn.BackgroundTransparency=1
+    Btn.Text=""; Btn.ZIndex=4
+
+    local function ApplyVisual(s)
+        TweenService:Create(Switch,TweenInfo.new(0.22,Enum.EasingStyle.Quad),{BackgroundColor3=s and T.accent or Color3.fromRGB(130,130,140)}):Play()
+        TweenService:Create(Knob,TweenInfo.new(0.22,Enum.EasingStyle.Quad),{Position=s and UDim2.new(0,23,0.5,-10) or UDim2.new(0,3,0.5,-10)}):Play()
+    end
+
+    if CurState then ApplyVisual(true) end
+    Btn.MouseButton1Click:Connect(function()
+        CurState = not CurState
+        ApplyVisual(CurState)
+        callback(CurState)
+    end)
+end
+
+local function AddSlider(parent, text, min, max, default, stateKey, callback)
+    local Frame = Instance.new("Frame")
+    Frame.Size=UDim2.new(0.97,0,0,56)
+    Frame.BackgroundColor3=T.secondary
+    Frame.BackgroundTransparency=T.glassSecondary
+    Frame.Parent=parent; Frame.ZIndex=2
+    Instance.new("UICorner",Frame).CornerRadius=UDim.new(0,9)
+    local fs=Instance.new("UIStroke",Frame)
+    fs.Thickness=1; fs.Color=Color3.fromRGB(255,255,255); fs.Transparency=0.82
+    table.insert(allFrames,Frame)
+
+    local Label=Instance.new("TextLabel",Frame)
+    Label.Size=UDim2.new(1,-16,0,22); Label.Position=UDim2.new(0,12,0,7)
+    Label.BackgroundTransparency=1; Label.Text=text..": "..default
+    Label.TextColor3=T.text; Label.Font=Enum.Font.GothamSemibold
+    Label.TextSize=13; Label.TextXAlignment=Enum.TextXAlignment.Left; Label.ZIndex=3
+    table.insert(allLabels,Label)
+
+    local SliderBack=Instance.new("Frame",Frame)
+    SliderBack.Size=UDim2.new(1,-24,0,8); SliderBack.Position=UDim2.new(0,12,1,-18)
+    SliderBack.BackgroundColor3=Color3.fromRGB(100,100,110); SliderBack.BackgroundTransparency=0.5
+    SliderBack.ZIndex=3
+    Instance.new("UICorner",SliderBack).CornerRadius=UDim.new(1,0)
+
+    local initRel=math.clamp((default-min)/(max-min),0,1)
+    local SliderFill=Instance.new("Frame",SliderBack)
+    SliderFill.Size=UDim2.new(initRel,0,1,0)
+    SliderFill.BackgroundColor3=T.accent; SliderFill.ZIndex=4
+    Instance.new("UICorner",SliderFill).CornerRadius=UDim.new(1,0)
+
+    local Knob=Instance.new("Frame",SliderBack)
+    Knob.Size=UDim2.new(0,16,0,16); Knob.AnchorPoint=Vector2.new(0.5,0.5)
+    Knob.Position=UDim2.new(initRel,0,0.5,0)
+    Knob.BackgroundColor3=Color3.fromRGB(255,255,255); Knob.ZIndex=5
+    Instance.new("UICorner",Knob).CornerRadius=UDim.new(1,0)
+
+    local ds=false; local curVal=default
+    SliderBack.InputBegan:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 then ds=true end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 then ds=false end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if ds and input.UserInputType==Enum.UserInputType.MouseMovement then
+            local rel=math.clamp((UserInputService:GetMouseLocation().X-SliderBack.AbsolutePosition.X)/SliderBack.AbsoluteSize.X,0,1)
+            curVal=math.floor(min+(max-min)*rel)
+            SliderFill.Size=UDim2.new(rel,0,1,0)
+            Knob.Position=UDim2.new(rel,0,0.5,0)
+            Label.Text=text..": "..curVal
+            callback(curVal)
+        end
+    end)
+
+    if stateKey then table.insert(sliderRefs,{key=stateKey,obj={
+        setValue=function(v)
+            local rel=math.clamp((v-min)/(max-min),0,1)
+            curVal=v
+            SliderFill.Size=UDim2.new(rel,0,1,0)
+            Knob.Position=UDim2.new(rel,0,0.5,0)
+            Label.Text=text..": "..v
+            callback(v)
+        end
+    }}) end
+end
+
+local function AddButton(parent, text, callback)
+    local Btn=Instance.new("TextButton")
+    Btn.Size=UDim2.new(0.97,0,0,40)
+    Btn.BackgroundColor3=T.accent; Btn.BackgroundTransparency=0.3
+    Btn.Font=Enum.Font.GothamSemibold; Btn.Text=text
+    Btn.TextColor3=Color3.fromRGB(255,255,255); Btn.TextSize=13
+    Btn.Parent=parent; Btn.ZIndex=2
+    Instance.new("UICorner",Btn).CornerRadius=UDim.new(0,9)
+    local bs=Instance.new("UIStroke",Btn)
+    bs.Thickness=1; bs.Color=Color3.fromRGB(255,255,255); bs.Transparency=0.78
+    table.insert(allAccentBtns,Btn)
+    Btn.MouseButton1Click:Connect(function()
+        TweenService:Create(Btn,TweenInfo.new(0.1),{BackgroundTransparency=0.1}):Play()
+        task.wait(0.1)
+        TweenService:Create(Btn,TweenInfo.new(0.1),{BackgroundTransparency=0.3}):Play()
+        callback()
+    end)
+end
+
+local function AddLabel(parent, text, isHeader)
+    local Lbl=Instance.new("TextLabel")
+    Lbl.Size=UDim2.new(0.97,0,0,isHeader and 36 or 32)
+    Lbl.BackgroundColor3=T.secondary
+    Lbl.BackgroundTransparency=T.glassSecondary
+    Lbl.Font=isHeader and Enum.Font.GothamBold or Enum.Font.Gotham
+    Lbl.Text=text
+    Lbl.TextColor3=isHeader and T.accent or T.text
+    Lbl.TextSize=isHeader and 15 or 13
+    Lbl.Parent=parent; Lbl.ZIndex=2
+    Instance.new("UICorner",Lbl).CornerRadius=UDim.new(0,8)
+    table.insert(allFrames,Lbl)
+    table.insert(allLabels,Lbl)
+end
+
+local function AddInputBox(parent, text, placeholder, btnText, callback)
+    local Frame=Instance.new("Frame")
+    Frame.Size=UDim2.new(0.97,0,0,70)
+    Frame.BackgroundColor3=T.secondary
+    Frame.BackgroundTransparency=T.glassSecondary
+    Frame.Parent=parent; Frame.ZIndex=2
+    Instance.new("UICorner",Frame).CornerRadius=UDim.new(0,9)
+    local fs=Instance.new("UIStroke",Frame)
+    fs.Thickness=1; fs.Color=Color3.fromRGB(255,255,255); fs.Transparency=0.82
+    table.insert(allFrames,Frame)
+
+    local Lbl=Instance.new("TextLabel",Frame)
+    Lbl.Size=UDim2.new(1,-16,0,22); Lbl.Position=UDim2.new(0,12,0,5)
+    Lbl.BackgroundTransparency=1; Lbl.Text=text; Lbl.TextColor3=T.text
+    Lbl.Font=Enum.Font.Gotham; Lbl.TextSize=12
+    Lbl.TextXAlignment=Enum.TextXAlignment.Left; Lbl.ZIndex=3
+    table.insert(allLabels,Lbl)
+
+    local Input=Instance.new("TextBox",Frame)
+    Input.Size=UDim2.new(0.65,0,0,26); Input.Position=UDim2.new(0,10,0,36)
+    Input.BackgroundColor3=Color3.fromRGB(50,50,60); Input.BackgroundTransparency=0.4
+    Input.Text=""; Input.PlaceholderText=placeholder or "..."
+    Input.TextColor3=Color3.fromRGB(255,255,255); Input.Font=Enum.Font.Gotham
+    Input.TextSize=12; Input.ZIndex=3
+    Instance.new("UICorner",Input).CornerRadius=UDim.new(0,6)
+
+    local ConfirmBtn=Instance.new("TextButton",Frame)
+    ConfirmBtn.Size=UDim2.new(0.3,0,0,26); ConfirmBtn.Position=UDim2.new(0.68,0,0,36)
+    ConfirmBtn.BackgroundColor3=T.accent; ConfirmBtn.BackgroundTransparency=0.3
+    ConfirmBtn.Text=btnText or "ok"; ConfirmBtn.TextColor3=Color3.fromRGB(255,255,255)
+    ConfirmBtn.Font=Enum.Font.GothamBold; ConfirmBtn.TextSize=11; ConfirmBtn.ZIndex=3
+    Instance.new("UICorner",ConfirmBtn).CornerRadius=UDim.new(0,6)
+    table.insert(allAccentBtns,ConfirmBtn)
+    ConfirmBtn.MouseButton1Click:Connect(function()
+        if Input.Text~="" then callback(Input.Text); Input.Text="" end
+    end)
+end
+
+-- PLS DONATE SERVER HOP LOGIC
+local function SendWebhook(content)
+    if not State.plsdonateWebhookEnabled or State.plsdonateWebhookUrl == "" then return end
+    pcall(function()
+        local payload = HttpService:JSONEncode({content = content})
+        local req = (syn and syn.request or http_request or request)
+        if req then
+            req({
+                Url = State.plsdonateWebhookUrl,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = payload
+            })
+        end
+    end)
+end
+
+local function TeleportToServer(placeId, jobId)
+    SendWebhook("🚀 Найден сервер с активным донатером! Перелетаю туда...")
+    game:GetService("TeleportService"):TeleportToPlaceInstance(placeId, jobId, LocalPlayer)
+end
+
+local function CheckForDonators()
+    local req = (syn and syn.request or http_request or request)
+    if not req then return end
+    
+    local response = req({
+        Url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100",
+        Method = "GET"
+    })
+    
+    if response and response.Body then
+        local data = HttpService:JSONDecode(response.Body)
+        if data and data.data then
+            for _, server in pairs(data.data) do
+                if server.id ~= game.JobId and server.playing < server.maxPlayers then
+                    -- Для PLS DONATE мы ищем сервера с разумным онлайном, где выше шанс найти донатера
+                    -- Обычно это сервера на 30-50 человек
+                    if server.playing > 15 then
+                        TeleportToServer(game.PlaceId, server.id)
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- Tabs
+local PlsDonateTab = CreateTab("pls donate")
+local MainTab = CreateTab("movement")
+local TpTab = CreateTab("teleport")
+local MiscTab = CreateTab("misc")
+local ThemeTab = CreateTab("themes")
+
+-- PLS DONATE Tab
+AddLabel(PlsDonateTab, "PLS DONATE Tools", true)
+
+AddToggle(PlsDonateTab, "Auto Hop for Donators", false, function(v)
+    State.plsdonateAutoHopDonator = v
+    task.spawn(function()
+        while State.plsdonateAutoHopDonator do
+            pcall(function()
+                CheckForDonators()
+            end)
+            task.wait(15)
+        end
+    end)
+end)
+
+AddInputBox(PlsDonateTab, "Discord Webhook URL", "https://discord.com/api/webhooks/...", "save", function(text)
+    State.plsdonateWebhookUrl = text
+end)
+
+AddToggle(PlsDonateTab, "Enable Webhook Notifications", false, function(v)
+    State.plsdonateWebhookEnabled = v
+end)
+
+AddToggle(PlsDonateTab, "Rich Presence (∞ locally)", false, function(v)
+    State.plsdonateRichPresence = v
+    task.spawn(function()
+        while State.plsdonateRichPresence do
+            pcall(function()
+                for _, obj in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                    if obj:IsA("TextLabel") and obj.Name:lower():find("robuxraised") then
+                        obj.Text = "RAISED: ∞"
+                    end
+                end
+            end)
+            task.wait(1)
+        end
+    end)
+end)
+
+-- Movement Tab
+AddSlider(MainTab,"speed",16,500,16,"speed",function(v)
+    State.speed=v
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed=v
+    end
+end)
+
+AddSlider(MainTab,"jump power",50,500,50,"jumpPower",function(v)
+    State.jumpPower=v
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower=v
+    end
+end)
+
+AddToggle(MainTab,"infinite jump",false,function(v)
+    State.infJump=v
+    UserInputService.JumpRequest:Connect(function()
+        if State.infJump and LocalPlayer.Character then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+        end
+    end)
+end)
+
+AddToggle(MainTab,"noclip",false,function(v)
+    State.noclip=v
+    RunService.Stepped:Connect(function()
+        if State.noclip and LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide=false end
+            end
+        end
+    end)
+end)
+
+AddToggle(MainTab,"fly (e = up, q = down)",false,function(v)
+    State.fly=v
+    if v then
+        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local BV=Instance.new("BodyVelocity",hrp)
+            BV.Name="FlyBV"; BV.MaxForce=Vector3.new(1e9,1e9,1e9); BV.Velocity=Vector3.new(0,0,0)
+            RunService.RenderStepped:Connect(function()
+                if State.fly and BV and BV.Parent then
+                    if UserInputService:IsKeyDown(Enum.KeyCode.E) then BV.Velocity=Vector3.new(0,50,0)
+                    elseif UserInputService:IsKeyDown(Enum.KeyCode.Q) then BV.Velocity=Vector3.new(0,-50,0)
+                    else BV.Velocity=Vector3.new(0,0,0) end
+                end
+            end)
+        end
+    else
+        local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp and hrp:FindFirstChild("FlyBV") then hrp.FlyBV:Destroy() end
+    end
+end)
+
+AddToggle(MainTab,"bhop",false,function(v)
+    State.bhop=v
+    RunService.Stepped:Connect(function()
+        if State.bhop and LocalPlayer.Character then
+            local hum=LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.FloorMaterial~=Enum.Material.Air then
+                hum:ChangeState("Jumping")
+            end
+        end
+    end)
+end)
+
+-- Teleport Tab
+AddButton(TpTab,"tp to random player",function()
+    local plrs=Players:GetPlayers()
+    if #plrs<2 then return end
+    local target
+    repeat target=plrs[math.random(1,#plrs)] until target~=LocalPlayer
+    if target.Character then LocalPlayer.Character:MoveTo(target.Character.HumanoidRootPart.Position) end
+end)
+
+AddButton(TpTab,"tp to spawn",function()
+    LocalPlayer.Character:MoveTo(Vector3.new(0,10,0))
+end)
+
+AddButton(TpTab,"save position",function()
+    _G.SavedPos=LocalPlayer.Character.HumanoidRootPart.CFrame
+end)
+
+AddButton(TpTab,"load position",function()
+    if _G.SavedPos then LocalPlayer.Character.HumanoidRootPart.CFrame=_G.SavedPos end
+end)
+
+-- Misc Tab
+AddLabel(MiscTab, "system", true)
+AddToggle(MiscTab,"anti-afk",true,function(v)
+    State.antiAfk=v
+    if v then
+        LocalPlayer.Idled:Connect(function()
+            local VirtualUser=game:GetService("VirtualUser")
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+    end
+end)
+
+AddLabel(MiscTab, "server tools", true)
+AddButton(MiscTab,"rejoin server",function()
+    game:GetService("TeleportService"):Teleport(game.PlaceId,LocalPlayer)
+end)
+
+AddButton(MiscTab,"server hop",function()
+    local req = (syn and syn.request or http_request or request)
+    if req then
+        local response = req({
+            Url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100",
+            Method = "GET"
+        })
+        if response and response.Body then
+            local data = HttpService:JSONDecode(response.Body)
+            if data and data.data then
+                for _, server in pairs(data.data) do
+                    if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
+                        break
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Theme Tab
+AddLabel(ThemeTab,"preset themes",true)
+AddButton(ThemeTab,"dark",function() UpdateTheme(Themes.dark) end)
+AddButton(ThemeTab,"light",function() UpdateTheme(Themes.light) end)
+AddButton(ThemeTab,"purple",function() UpdateTheme(Themes.purple) end)
+AddButton(ThemeTab,"midnight",function() UpdateTheme(Themes.midnight) end)
+AddButton(ThemeTab,"rose",function() UpdateTheme(Themes.rose) end)
+AddButton(ThemeTab,"forest",function() UpdateTheme(Themes.forest) end)
+AddButton(ThemeTab,"sunset",function() UpdateTheme(Themes.sunset) end)
+AddButton(ThemeTab,"ice",function() UpdateTheme(Themes.ice) end)
+
+-- Open first tab
+Pages["pls donate"].Visible = true
+SideScroll.TextButton.BackgroundColor3 = T.accent
